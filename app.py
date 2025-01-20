@@ -63,38 +63,21 @@ class ExpenseApp:
             </style>
         """, unsafe_allow_html=True)
 
-    def _initialize_google_services(self):
-        """Initialize Google Sheets and Drive services with caching"""
+    def _initialize_google_sheets(self):
+        """Initialize Google Sheets connection with caching"""
         @st.cache_resource
-        def _get_services(_):
+        def _get_sheets_service(_):
             try:
                 credentials = service_account.Credentials.from_service_account_info(
                     st.secrets["gcp_service_account"],
-                    scopes=[
-                        'https://www.googleapis.com/auth/spreadsheets',
-                        'https://www.googleapis.com/auth/drive.file'
-                    ]
+                    scopes=['https://www.googleapis.com/auth/spreadsheets']
                 )
-                sheets = build('sheets', 'v4', credentials=credentials)
-                drive = build('drive', 'v3', credentials=credentials)
-                return sheets, drive
+                return build('sheets', 'v4', credentials=credentials)
             except Exception as e:
-                st.error(f"Error initializing Google services: {str(e)}")
+                st.error(f"Error initializing Google Sheets: {str(e)}")
                 raise
         
-        return _get_services(1)  # Pass dummy argument for caching
-    def test_drive_access(self):
-        """Test Drive API access"""
-        try:
-            # List files to test access
-            results = self.drive_service.files().list(
-                pageSize=1,
-                fields="files(id, name)"
-            ).execute()
-            return True
-        except Exception as e:
-            st.error(f"Drive API error: {str(e)}")
-            return False
+        return _get_sheets_service(1)  # Pass a dummy argument for caching
 
     @st.cache_data(ttl=30)
     def read_sheet_to_df(_self, sheet_id, range_name):
